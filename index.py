@@ -13,7 +13,7 @@ def handler(event, context):
     except Exception as e:
         return {
             'statusCode': 500,
-            'headers': {'Content-Type': 'text/plain; charset=utf-8', 'Access-Control-Allow-Origin': '*'},
+            'headers': {'Content-Type': 'text/plain; charset=utf-8', 'Content-Disposition': 'inline', 'Access-Control-Allow-Origin': '*'},
             'body': f"Error: {e}\n\n{traceback.format_exc()}\n\nevent type: {type(event)}\nevent[:500]: {str(event)[:500]}"
         }
 
@@ -51,10 +51,10 @@ def _proxy(path, query, headers):
                 json.loads(data)
             except:
                 return _json({'error': True, 'reason': 'API返回非JSON', 'raw': data[:300]}, 502)
-            return {'statusCode': resp.status, 'headers': {'Content-Type': 'application/json; charset=utf-8', 'Access-Control-Allow-Origin': '*'}, 'body': data}
+            return {'statusCode': resp.status, 'headers': {'Content-Type': 'application/json; charset=utf-8', 'Content-Disposition': 'inline', 'Access-Control-Allow-Origin': '*'}, 'body': data}
     except urllib.error.HTTPError as e:
         data = e.read().decode('utf-8', errors='replace')
-        return {'statusCode': e.code, 'headers': {'Content-Type': 'application/json; charset=utf-8', 'Access-Control-Allow-Origin': '*'}, 'body': data}
+        return {'statusCode': e.code, 'headers': {'Content-Type': 'application/json; charset=utf-8', 'Content-Disposition': 'inline', 'Access-Control-Allow-Origin': '*'}, 'body': data}
     except Exception as e:
         return _json({'error': True, 'reason': str(e)}, 502)
 
@@ -72,13 +72,13 @@ def _serve_html():
                 continue
         if _APP_HTML is None:
             return _text('app_2.html not found', 404)
-    return {'statusCode': 200, 'headers': {'Content-Type': 'text/html; charset=utf-8', 'Access-Control-Allow-Origin': '*'}, 'body': _APP_HTML}
+    return {'statusCode': 200, 'headers': {'Content-Type': 'text/html; charset=utf-8', 'Content-Disposition': 'inline', 'Access-Control-Allow-Origin': '*'}, 'body': _APP_HTML}
 
 def _json(data, status=200):
-    return {'statusCode': status, 'headers': {'Content-Type': 'application/json; charset=utf-8', 'Access-Control-Allow-Origin': '*'}, 'body': json.dumps(data, ensure_ascii=False)}
+    return {'statusCode': status, 'headers': {'Content-Type': 'application/json; charset=utf-8', 'Content-Disposition': 'inline', 'Access-Control-Allow-Origin': '*'}, 'body': json.dumps(data, ensure_ascii=False)}
 
 def _text(text, status=200):
-    return {'statusCode': status, 'headers': {'Content-Type': 'text/plain; charset=utf-8', 'Access-Control-Allow-Origin': '*'}, 'body': text}
+    return {'statusCode': status, 'headers': {'Content-Type': 'text/plain; charset=utf-8', 'Content-Disposition': 'inline', 'Access-Control-Allow-Origin': '*'}, 'body': text}
 
 def _cors_response():
-    return {'statusCode': 200, 'headers': {'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Methods': 'GET,POST,OPTIONS', 'Access-Control-Allow-Headers': 'Content-Type,X-TYC-Token,Authorization'}, 'body': ''}
+    return {'statusCode': 200, 'headers': {'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Methods': 'GET,POST,OPTIONS', 'Access-Control-Allow-Headers': 'Content-Type,X-TYC-Token,Authorization', 'Content-Disposition': 'inline'}, 'body': ''}

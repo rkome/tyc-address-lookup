@@ -1,23 +1,23 @@
-"""阿里云函数计算 FC 入口"""
+"""阿里云函数计算 FC 入口 - FC 3.0"""
 import json, os, ssl, urllib.request, urllib.error, traceback
 
 TYC_API_BASE = "https://open.api.tianyancha.com"
-
-# 静态文件内联（避免路径问题）
 _APP_HTML = None
 
 def handler(event, context):
     try:
+        # FC 3.0 传 bytes，需要解码
+        if isinstance(event, bytes):
+            event = json.loads(event.decode('utf-8'))
         return _handle(event)
     except Exception as e:
         return {
             'statusCode': 500,
             'headers': {'Content-Type': 'text/plain; charset=utf-8', 'Access-Control-Allow-Origin': '*'},
-            'body': f"Error: {e}\n\n{traceback.format_exc()}"
+            'body': f"Error: {e}\n\n{traceback.format_exc()}\n\nevent type: {type(event)}\nevent[:500]: {str(event)[:500]}"
         }
 
 def _handle(event):
-    # FC 3.0 HTTP 触发器 event 格式
     method = (event.get('requestContext', {}).get('http', {}).get('method', '') or
               event.get('httpMethod', '') or 'GET').upper()
     path = (event.get('rawPath', '') or event.get('path', '/')).split('?')[0]
@@ -61,16 +61,17 @@ def _proxy(path, query, headers):
 def _serve_html():
     global _APP_HTML
     if _APP_HTML is None:
-        try:
-            with open(os.path.join(os.path.dirname(__file__), 'app_2.html'), 'r', encoding='utf-8') as f:
-                _APP_HTML = f.read()
-        except:
-            # 回退：尝试当前目录
+        for base in [os.path.dirname(__file__), os.getcwd(), '/code', '/var/fc/runtime']:
             try:
-                with open('app_2.html', 'r', encoding='utf-8') as f:
-                    _APP_HTML = f.read()
+                p = os.path.join(base, 'app_2.html')
+                if os.path.isfile(p):
+                    with open(p, 'r', encoding='utf-8') as f:
+                        _APP_HTML = f.read()
+                    break
             except:
-                return _text('app_2.html not found', 404)
+                continue
+        if _APP_HTML is None:
+            return _text('app_2.html not found', 404)
     return {'statusCode': 200, 'headers': {'Content-Type': 'text/html; charset=utf-8', 'Access-Control-Allow-Origin': '*'}, 'body': _APP_HTML}
 
 def _json(data, status=200):

@@ -67,6 +67,21 @@ class ProxyHandler(http.server.BaseHTTPRequestHandler):
         try:
             with urllib.request.urlopen(req, context=ctx, timeout=30) as resp:
                 data = resp.read()
+                # 天眼查可能返回 HTML（WAF拦截/地域限制），前端需要 JSON
+                try:
+                    json.loads(data)
+                except (json.JSONDecodeError, ValueError):
+                    self.send_response(502)
+                    self._cors()
+                    self.send_header('Content-Type', 'application/json; charset=utf-8')
+                    self.end_headers()
+                    self.wfile.write(json.dumps({
+                        "error": True,
+                        "reason": "天眼查API返回了非JSON响应（可能被防火墙拦截或IP受限）",
+                        "tip": "Render 服务器在美国，天眼查可能限制境外IP访问",
+                        "raw": data[:200].decode('utf-8', errors='replace')
+                    }, ensure_ascii=False).encode())
+                    return
                 self.send_response(resp.status)
                 self._cors()
                 ct = resp.headers.get('Content-Type', 'application/json; charset=utf-8')

@@ -1,0 +1,7 @@
+services:
+  - type: web
+    name: tyc-address-lookup
+    env: python
+    plan: free
+    buildCommand: ""
+    startCommand: python3 proxy.py
